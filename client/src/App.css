@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+@keyframes ping-slow {
+  0%, 100% { transform: scale(1); opacity: 0.2; }
+  50% { transform: scale(1.2); opacity: 0.1; }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 6s ease-in-out infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+/* Hide elements with `no-print` in print view */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  html, body {
+    background: white;
+    padding: 0;
+    margin: 0;
+    font-size: 12pt;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force page break if needed between sections */
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* Set proper size */
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+}

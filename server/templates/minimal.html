@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice #{{invoiceNo}}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      body {
+        background: white;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+
+    body {
+      font-family: 'Lato', sans-serif;
+    }
+  </style>
+</head>
+<body class="text-sm text-gray-700 p-8 bg-white">
+
+  <div class="max-w-4xl mx-auto bg-white border border-blue-100 rounded-lg shadow p-10 text-sm leading-relaxed">
+
+    <!-- Header -->
+<div class="flex justify-between items-start mb-3">
+  <!-- Left: Logo + Business Info -->
+  <div class="flex items-start gap-4">
+    {{#if business.logoUrl}}
+      <img src="http://localhost:5000{{business.logoUrl}}" alt="{{business.name}} logo" class="h-16 w-16 rounded-full object-cover border border-gray-300" />
+    {{/if}}
+    <div>
+      <h1 class="text-xl font-bold text-gray-800">{{business.name}}</h1>
+      <p class="text-xs text-gray-600 mt-0.5">{{business.address}}</p>
+      <p class="text-xs text-gray-600">{{business.phone}}</p>
+    </div>
+  </div>
+
+  <!-- Right: Invoice Info -->
+  <div class="text-sm text-right space-y-1">
+    <p class="text-xs font-bold text-black">Tax ID: {{business.taxId}}</p>
+    <p><span class="font-semibold">Invoice #:</span> {{invoiceNo}}</p>
+    <p><span class="font-semibold">Date:</span> {{billDate}}</p>
+    <p><span class="font-semibold">Due:</span> {{dueDate}}</p>
+    <p><span class="font-semibold">Status:</span> {{status}}</p>
+  </div>
+</div>
+
+
+    <!-- Bill To -->
+    <div class="mb-6 border-b border-blue-200 pb-4">
+      <h3 class="text-base font-bold text-gray-600 mb-1">Invoice To:</h3>
+      <div class="text-xs space-y-0.5">
+        <p>{{billTo.name}}</p>
+        <p>{{billTo.address}}</p>
+        <p>{{billTo.contact}}</p>
+        <p>{{billTo.email}}</p>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="w-full mb-6 border border-gray-200 text-xs">
+      <thead class="bg-slate-50 text-black">
+        <tr>
+          <th class="py-2 px-3 text-center w-10">#</th>
+          <th class="py-2 px-3 text-left w-1/2">ITEM DESCRIPTION</th>
+          <th class="py-2 px-3 text-center w-1/6">UNIT PRICE</th>
+          <th class="py-2 px-3 text-center w-1/12">QTY</th>
+          <th class="py-2 px-3 text-right w-1/6">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each items}}
+        <tr class="border-t border-gray-200">
+          <td class="px-3 py-1 text-center w-10">{{inc @index}}</td>
+          <td class="px-2 py-1">{{description}}</td>
+          <td class="px-2 py-1 text-center">{{rate}}</td>
+          <td class="px-2 py-1 text-center">{{quantity}}</td>
+          <td class="px-2 py-1 text-right">{{calcItemTotal this}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="max-w-sm ml-auto bg-slate-50 p-4 rounded shadow text-sm space-y-1">
+      <div class="flex justify-between"><span>Subtotal:</span><span>{{currency}} {{subtotal}}</span></div>
+      <div class="flex justify-between"><span>Discount ({{discount}}%):</span><span>-{{currency}} {{discountAmount}}</span></div>
+      <div class="flex justify-between"><span>Tax ({{tax}}%):</span><span>{{currency}} {{taxAmount}}</span></div>
+      <div class="flex justify-between"><span>VAT ({{vat}}%):</span><span>{{currency}} {{vatAmount}}</span></div>
+      <div class="flex justify-between"><span>Shipping:</span><span>{{currency}} {{shipping}}</span></div>
+      <div class="flex justify-between text-base font-bold border-t pt-2">
+        <span>Total:</span><span>{{currency}} {{total}}</span>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    {{#if notes}}
+      <div class="mt-6 text-xs italic text-gray-600">
+        <strong>Notes:</strong> {{notes}}
+      </div>
+    {{/if}}
+
+  </div>
+
+</body>
+</html>

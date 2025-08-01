@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import SidebarSearchFilters from "./SidebarSearchFilters";
 import axios from "../../../api/axios";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function InvoiceList() {
   const { id } = useParams();
@@ -9,38 +11,43 @@ export default function InvoiceList() {
   const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const res = await axios.get(`/invoices/business/${id}`);
-        const now = new Date();
-
-        const updatedInvoices = res.data.map((inv) => {
-          const dueDate = new Date(inv.dueDate);
-          const isOverdue = inv.status === "Due" && dueDate < now;
-
-          return {
-            ...inv,
-            status: isOverdue ? "Overdue" : inv.status,
-          };
-        });
-
-        setInvoices(updatedInvoices);
-      } catch (err) {
-        console.error("Failed to load invoices", err);
-      }
-    };
-
     fetchInvoices();
   }, [id]);
 
+  const fetchInvoices = async () => {
+    try {
+      const res = await axios.get(`/invoices/business/${id}`);
+      const now = new Date();
+
+      const updatedInvoices = res.data.map((inv) => {
+        const dueDate = new Date(inv.dueDate);
+        const isOverdue = inv.status === "Due" && dueDate < now;
+        return { ...inv, status: isOverdue ? "Overdue" : inv.status };
+      });
+
+      setInvoices(updatedInvoices);
+    } catch (err) {
+      console.error("Failed to load invoices", err);
+    }
+  };
+
+  const handleDeleteInvoice = async (invoiceId) => {
+    try {
+      await axios.delete(`/invoices/${invoiceId}`);
+      toast.success("Invoice deleted successfully!");
+      setInvoices((prev) => prev.filter((inv) => inv._id !== invoiceId));
+    } catch (error) {
+      console.error("Failed to delete invoice", error);
+      toast.error("Failed to delete invoice. Please try again.");
+    }
+  };
+
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
   };
 
   const filteredInvoices = invoices.filter((inv) => {
@@ -57,15 +64,11 @@ export default function InvoiceList() {
   });
 
   const calculateDueAmount = (inv) => {
-    const subtotal = inv.items?.reduce((sum, item) => {
-      return sum + item.quantity * item.rate;
-    }, 0) || 0;
-
+    const subtotal = inv.items?.reduce((sum, item) => sum + item.quantity * item.rate, 0) || 0;
     const discount = inv.discount || 0;
     const tax = inv.tax || 0;
     const vat = inv.vat || 0;
     const shipping = inv.shipping || 0;
-
     const total = subtotal + tax + vat + shipping - discount;
     return total.toFixed(2);
   };
@@ -99,41 +102,90 @@ export default function InvoiceList() {
               </thead>
               <tbody>
                 {filteredInvoices.map((inv) => (
-                  <tr key={inv._id} className="border-b hover:bg-gray-50">
-                    <td className="p-2">{inv.invoiceNo}</td>
-                    <td className="p-2">{inv.billTo?.name || "N/A"}</td>
-                    <td className="p-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          inv.status === "Paid"
-                            ? "bg-green-100 text-green-700"
-                            : inv.status === "Due"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {inv.status}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      {inv.currency} {calculateDueAmount(inv)}
-                    </td>
-                    <td className="p-2">{formatDate(inv.dueDate)}</td>
-                    <td className="p-2 text-center space-x-2">
-                      <button
-                        onClick={() => navigate(`/invoice/view/${inv._id}`)}
-                        className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => navigate(`/invoice/edit/${inv._id}`)}
-                        className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
+                  <React.Fragment key={inv._id}>
+                    <tr className="border-b hover:bg-gray-50">
+                      <td className="p-2">{inv.invoiceNo}</td>
+                      <td className="p-2 flex items-center justify-between">
+                        {inv.billTo?.name || "N/A"}
+                        <button
+                          onClick={() =>
+                            setOpenDropdownId(openDropdownId === inv._id ? null : inv._id)
+                          }
+                          className="ml-2 text-gray-500 hover:text-black transition-transform"
+                          title="View Contact Info"
+                        >
+                          <span
+                            className={`inline-block transform transition-transform duration-300 ${
+                              openDropdownId === inv._id ? "rotate-180" : ""
+                            }`}
+                          >
+                            ▼
+                          </span>
+                        </button>
+                      </td>
+                      <td className="p-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            inv.status === "Paid"
+                              ? "bg-green-100 text-green-700"
+                              : inv.status === "Due"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {inv.status}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        {inv.currency} {calculateDueAmount(inv)}
+                      </td>
+                      <td className="p-2">{formatDate(inv.dueDate)}</td>
+                      <td className="p-2 text-center space-x-2">
+                        <button
+  onClick={() => navigate(`/invoice/${inv._id}`)}
+  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+>
+  View
+</button>
+
+                        <button
+                          onClick={() => navigate(`/invoice/edit/${inv._id}`)}
+                          className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteInvoice(inv._id)}
+                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+
+                    {/* ⬇️ Animated Dropdown Row */}
+                    <AnimatePresence>
+                      {openDropdownId === inv._id && (
+                        <motion.tr
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <td colSpan="6" className="bg-gray-50 p-3 text-sm text-gray-700">
+                            <div className="flex flex-col gap-1">
+                              <p>
+                                <strong>Contact No :</strong> {inv.billTo?.contact || "N/A"}
+                              </p>
+                              <p>
+                                <strong>Email:</strong> {inv.billTo?.email || "N/A"}
+                              </p>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      )}
+                    </AnimatePresence>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

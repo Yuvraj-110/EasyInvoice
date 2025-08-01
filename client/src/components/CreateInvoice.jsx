@@ -30,10 +30,31 @@ export default function CreateInvoice() {
   const [dueDate, setDueDate] = useState("");
   const [billDate, setBillDate] = useState("");
   const [status, setStatus] = useState("Due");
-  const [invoiceNo, setInvoiceNo] = useState("0001");
   const [billTo, setBillTo] = useState({ name: "", address: "", contact: "", email: "" });
   const [notes, setNotes] = useState("");
   const [template, setTemplate] = useState(queryParams.get("template") || "classic");
+  
+  const [invoiceNo, setInvoiceNo] = useState("");
+  useEffect(() => {
+  const fetchBusinessAndInvoiceNo = async () => {
+    try {
+      const { data } = await axios.get(`/businesses/${businessId}`);
+      setBusiness(data);
+      if (data.currency) setCurrency(data.currency);
+
+      // 🔁 Now fetch invoice number after business is set
+      const res = await axios.get(`/invoices/next-invoice-no?businessId=${data._id}`);
+      setInvoiceNo(res.data.invoiceNo);
+    } catch (err) {
+      toast.error("Failed to load business or invoice no");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchBusinessAndInvoiceNo();
+}, [businessId]);
+
 
   useEffect(() => {
     const fetchBusiness = async () => {

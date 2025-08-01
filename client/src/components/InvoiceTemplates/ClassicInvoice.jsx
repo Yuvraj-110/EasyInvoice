@@ -29,7 +29,7 @@ export default function ClassicInvoiceForm({
             {business.taxId && (
               <p className="text-bold text-gray-900 font-medium">Tax ID: {business.taxId}</p>
             )}
-            <p>Invoice No: #{invoiceNo}</p>
+            <p>Invoice No: {invoiceNo}</p>
             <p>
               Bill Date:
               <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)}

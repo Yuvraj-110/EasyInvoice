@@ -11,7 +11,9 @@ const itemSchema = new mongoose.Schema({
 const billToSchema = new mongoose.Schema({
   name: String,
   email: String,
+  contact: String,
   address: String
+
 }, { _id: false });
 
 const invoiceSchema = new mongoose.Schema({
@@ -27,7 +29,6 @@ const invoiceSchema = new mongoose.Schema({
   notes: String,
   template: String,
 
-  // ✅ Reference to Business collection
   business: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Business',
@@ -48,5 +49,8 @@ const invoiceSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+// ✅ Protect against duplicate invoiceNo for the same business
+invoiceSchema.index({ business: 1, invoiceNo: 1 }, { unique: true });
 
 export default mongoose.model('Invoice', invoiceSchema);

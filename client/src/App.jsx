@@ -12,8 +12,7 @@ import Welcome from './pages/Welcome';
 import CreateInvoice from './components/CreateInvoice';
 import ProtectedRoute from "./components/ProtectedRoute";
 import SelectTemplate from "./pages/SelectTemplate";
-// import BusinessDashboard from "./components/dashboard/BusinessDashboard";
-
+import InvoicePreviewPage from './pages/InvoicePreviewPage';
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
 import SidebarLayout from "./components/dashboard/SidebarLayout/SidebarLayout";
@@ -40,7 +39,7 @@ function App() {
           <Route path="/verify" element={<VerifyPage />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/business/:id/dashboard" element={<SidebarLayout />} />
-
+          <Route path="/invoice/:id" element={<InvoicePreviewPage />} />
           <Route path="/business/:businessId/create-invoice" element={
   <ProtectedRoute>
     <CreateInvoice />

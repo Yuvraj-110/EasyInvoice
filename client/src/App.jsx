@@ -3,7 +3,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import About from './pages/About';
-import Contact from './pages/Contact';
+import Contact from './pages/ContactUs';
 import Dashboard from "./pages/Dashboard";
 import AddBusiness from "./pages/AddBusiness";
 import AuthPage from "./components/AuthPage";
@@ -13,9 +13,13 @@ import CreateInvoice from './components/CreateInvoice';
 import ProtectedRoute from "./components/ProtectedRoute";
 import SelectTemplate from "./pages/SelectTemplate";
 import InvoicePreviewPage from './pages/InvoicePreviewPage';
+// import EditInvoice from "./components/EditInvoice";
+import EditInvoicePage from './pages/EditInvoicePage';
+
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
 import SidebarLayout from "./components/dashboard/SidebarLayout/SidebarLayout";
+import ContactUs from "./pages/ContactUs";
 
 function App() {
   const { loading } = useContext(AuthContext);
@@ -30,7 +34,7 @@ function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
-      <main style={{ flex: 1}}>
+      <main style={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
@@ -38,13 +42,23 @@ function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/verify" element={<VerifyPage />} />
           <Route path="/welcome" element={<Welcome />} />
+
           <Route path="/business/:id/dashboard" element={<SidebarLayout />} />
+
           <Route path="/invoice/:id" element={<InvoicePreviewPage />} />
-          <Route path="/business/:businessId/create-invoice" element={
-  <ProtectedRoute>
-    <CreateInvoice />
-  </ProtectedRoute>
-} />
+
+         <Route path="/invoices/edit/:id" element={<EditInvoicePage />} />
+
+
+          <Route
+            path="/business/:businessId/create-invoice"
+            element={
+              <ProtectedRoute>
+                <CreateInvoice />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/dashboard"
             element={
@@ -62,12 +76,15 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/business/:businessId/select-template" element={
-            <ProtectedRoute>
-              <SelectTemplate />
-            </ProtectedRoute>
-          } />
 
+          <Route
+            path="/business/:businessId/select-template"
+            element={
+              <ProtectedRoute>
+                <SelectTemplate />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
       <Footer />

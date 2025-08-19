@@ -113,6 +113,25 @@ export const saveInvoiceToDB = async (data, template) => {
   await newInvoice.save();
 };
 
+export const updateInvoice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedInvoice = await Invoice.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedInvoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+
+    res.status(200).json(updatedInvoice);
+  } catch (err) {
+    console.error("Error updating invoice:", err.message);
+    res.status(500).json({ error: "Failed to update invoice" });
+  }
+};
+
 
 export const getNextInvoiceNumber = async (req, res) => {
   try {

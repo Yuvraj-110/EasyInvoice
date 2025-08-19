@@ -13,7 +13,9 @@ import ElegantTemplate from './InvoiceTemplates/ElegantInvoiceForm';
 export default function CreateInvoice() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const { businessId } = useParams();
+
+  const { businessId, invoiceId } = useParams(); // ✅ Extract invoiceId for edit mode
+  const isEditMode = !!invoiceId; // ✅ Determine if we are in edit mode
 
   const [business, setBusiness] = useState({});
   const [loading, setLoading] = useState(true);
@@ -33,82 +35,96 @@ export default function CreateInvoice() {
   const [billTo, setBillTo] = useState({ name: "", address: "", contact: "", email: "" });
   const [notes, setNotes] = useState("");
   const [template, setTemplate] = useState(queryParams.get("template") || "classic");
-  
   const [invoiceNo, setInvoiceNo] = useState("");
+
+  // Fetch for Create or Edit mode
   useEffect(() => {
-  const fetchBusinessAndInvoiceNo = async () => {
-    try {
-      const { data } = await axios.get(`/businesses/${businessId}`);
-      setBusiness(data);
-      if (data.currency) setCurrency(data.currency);
-
-      // 🔁 Now fetch invoice number after business is set
-      const res = await axios.get(`/invoices/next-invoice-no?businessId=${data._id}`);
-      setInvoiceNo(res.data.invoiceNo);
-    } catch (err) {
-      toast.error("Failed to load business or invoice no");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchBusinessAndInvoiceNo();
-}, [businessId]);
-
-
-  useEffect(() => {
-    const fetchBusiness = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await axios.get(`/businesses/${businessId}`);
-        setBusiness(data);
-        if (data.currency) setCurrency(data.currency);
+        if (isEditMode) {
+          const { data } = await axios.get(`/invoices/${invoiceId}`);
+          const {
+            business, billTo, items, invoiceNo, billDate, dueDate,
+            status, discount, tax, vat, shipping, currency, notes, template
+          } = data;
+
+          setBusiness(business);
+          setBillTo(billTo);
+          setItems(items);
+          setInvoiceNo(invoiceNo);
+          setBillDate(billDate);
+          setDueDate(dueDate);
+          setStatus(status);
+          setDiscount(discount);
+          setTax(tax);
+          setVat(vat);
+          setShipping(shipping);
+          setCurrency(currency);
+          setNotes(notes);
+          setTemplate(template);
+        } else {
+          const { data } = await axios.get(`/businesses/${businessId}`);
+          setBusiness(data);
+          if (data.currency) setCurrency(data.currency);
+
+          const res = await axios.get(`/invoices/next-invoice-no?businessId=${data._id}`);
+          setInvoiceNo(res.data.invoiceNo);
+        }
       } catch (err) {
-        toast.error("Failed to load business");
+        toast.error("Failed to load invoice or business data.");
       } finally {
         setLoading(false);
       }
     };
-    fetchBusiness();
-  }, [businessId]);
+
+    fetchData();
+  }, [businessId, invoiceId, isEditMode]);
 
   const calcSubtotal = () => items.reduce((acc, item) => acc + Number(item.quantity || 0) * Number(item.rate || 0), 0);
   const calcDiscount = () => (calcSubtotal() * (Number(discount) || 0)) / 100;
   const calcTax = () => (calcSubtotal() * (Number(tax) || 0)) / 100;
   const calcVat = () => (calcSubtotal() * (Number(vat) || 0)) / 100;
-  const calcTotal = () => {
-    const subtotal = calcSubtotal();
-    return (
-      subtotal - calcDiscount() + calcTax() + calcVat() + Number(shipping || 0)
-    ).toFixed(2);
-  };
+ const calcTotal = () => {
+  const subtotal = calcSubtotal();
+  const total =
+    subtotal - calcDiscount() + calcTax() + calcVat() + Number(shipping || 0);
+  return Number(total.toFixed(2)); // return as Number not string
+};
 
-  const saveInvoiceToDB = async () => {
-    try {
-      const payload = {
-        business,
-        billTo,
-        items,
-        invoiceNo,
-        billDate,
-        dueDate,
-        status,
-        discount,
-        tax,
-        vat,
-        shipping,
-        currency,
-        notes,
-        template,
-        total: calcTotal(),
-      };
+const saveInvoiceToDB = async () => {
+  try {
+    const subtotal = calcSubtotal(); // 👈 Add this
 
+    const payload = {
+      business,
+      billTo,
+      items,
+      invoiceNo,
+      billDate,
+      dueDate,
+      status,
+      discount,
+      tax,
+      vat,
+      shipping,
+      currency,
+      notes,
+      template,
+      subtotal: Number(subtotal.toFixed(2)), // ✅ Add subtotal
+      total: calcTotal(), // ✅ Already fixed above
+    };
+
+    if (isEditMode) {
+      await axios.put(`/invoices/${invoiceId}`, payload);
+      toast.success("Invoice updated successfully!");
+    } else {
       await axios.post("/api/invoices/save", payload);
-      console.log("Invoice saved to DB.");
-    } catch (error) {
-      console.error("Error saving invoice:", error);
-      toast.error("Failed to save invoice to DB.");
+      toast.success("Invoice created successfully!");
     }
-  };
+  } catch (error) {
+    toast.error("Failed to save invoice.");
+  }
+};
 
   const handleDownloadPDF = async () => {
     try {
@@ -126,7 +142,7 @@ export default function CreateInvoice() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       await saveInvoiceToDB();
       toast.success("Invoice downloaded & saved successfully!");
     } catch (err) {
@@ -204,7 +220,7 @@ export default function CreateInvoice() {
     <div className="mt-7 max-w-7xl mx-auto px-6 py-12 font-sans text-sm relative">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-gray-800">
-          Create Invoice — <span className="text-blue-600 capitalize">{template}</span> template
+          {isEditMode ? "Edit Invoice" : "Create Invoice"} — <span className="text-blue-600 capitalize">{template}</span> template
         </h1>
       </div>
 
@@ -263,7 +279,6 @@ export default function CreateInvoice() {
         </div>
       )}
 
-      {/* Full-screen fancy spinner */}
       {actionLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-4 text-white animate-fadeIn">

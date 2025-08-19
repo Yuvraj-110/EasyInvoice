@@ -1,5 +1,5 @@
 import express from 'express';
-import { generateInvoicePDF, shareInvoice,saveInvoiceToDB, getInvoicesByBusiness,getNextInvoiceNumber,deleteInvoice,getInvoiceById } from '../controllers/invoiceController.js';
+import { generateInvoicePDF, shareInvoice,saveInvoiceToDB, getInvoicesByBusiness,getNextInvoiceNumber,deleteInvoice,getInvoiceById,updateInvoice } from '../controllers/invoiceController.js';
 
 const router = express.Router();
 
@@ -10,6 +10,7 @@ router.get('/next-invoice-no', getNextInvoiceNumber);
 router.get("/business/:businessId", getInvoicesByBusiness);
 router.delete("/:id", deleteInvoice);
 router.get('/:id', getInvoiceById); 
+router.put("/:id", updateInvoice);
 
 
 

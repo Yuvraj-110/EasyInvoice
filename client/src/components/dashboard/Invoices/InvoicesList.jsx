@@ -63,15 +63,13 @@ export default function InvoiceList() {
     return matchesSearch && matchesFilter;
   });
 
-  const calculateDueAmount = (inv) => {
-    const subtotal = inv.items?.reduce((sum, item) => sum + item.quantity * item.rate, 0) || 0;
-    const discount = inv.discount || 0;
-    const tax = inv.tax || 0;
-    const vat = inv.vat || 0;
-    const shipping = inv.shipping || 0;
-    const total = subtotal + tax + vat + shipping - discount;
-    return total.toFixed(2);
-  };
+ const calculateDueAmount = (inv) => {
+  if (inv.status === "Paid") return "0.00";
+  const total = parseFloat(inv.total) || 0;
+  return total.toFixed(2);
+};
+
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -95,6 +93,7 @@ export default function InvoiceList() {
                   <th className="p-2">Invoice No</th>
                   <th className="p-2">Client</th>
                   <th className="p-2">Status</th>
+                  <th>Billed Amount</th>
                   <th className="p-2">Due Amount</th>
                   <th className="p-2">Due Date</th>
                   <th className="p-2 text-center">Actions</th>
@@ -136,29 +135,31 @@ export default function InvoiceList() {
                           {inv.status}
                         </span>
                       </td>
+                      <td>INR {parseFloat(inv.total || 0).toFixed(2)}</td>
                       <td className="p-2">
                         {inv.currency} {calculateDueAmount(inv)}
                       </td>
                       <td className="p-2">{formatDate(inv.dueDate)}</td>
                       <td className="p-2 text-center space-x-2">
                         <button
-  onClick={() => navigate(`/invoice/${inv._id}`)}
-  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
->
-  View
-</button>
+                            onClick={() => navigate(`/invoice/${inv._id}`)}
+                            className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                            >
+                            View
+                        </button>
+
+                         <button
+                              onClick={() => navigate(`/invoices/edit/${inv._id}`)}
+                              className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                              >
+                              Edit
+                          </button>
 
                         <button
-                          onClick={() => navigate(`/invoice/edit/${inv._id}`)}
-                          className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteInvoice(inv._id)}
-                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-                        >
-                          Delete
+                            onClick={() => handleDeleteInvoice(inv._id)}
+                            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                            >
+                            Delete
                         </button>
                       </td>
                     </tr>

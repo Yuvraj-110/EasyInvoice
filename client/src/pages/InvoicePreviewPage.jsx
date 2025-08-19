@@ -26,50 +26,69 @@ const InvoicePreviewPage = () => {
     fetchInvoice();
   }, [id]);
 
-  const handleDownloadPDF = async () => {
-    try {
-      const response = await axios.post(
-        '/invoices/generate-pdf',
-        { ...invoice, shouldSave: false },
-        { responseType: 'blob' }
-      );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Invoice_${invoice.invoiceNo}_${invoice.template}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success('Invoice downloaded!');
-    } catch (err) {
-      console.error(err);
-      toast.error('Download failed');
-    }
-  };
+const handleDownloadPDF = async () => {
+  try {
+    setLoadingText('Downloading Invoice...');
+    setActionLoading(true);
 
-  const handlePrint = async () => {
-    try {
-      const response = await axios.post(
-        '/invoices/generate-pdf',
-        { ...invoice, shouldSave: false },
-        { responseType: 'blob' }
-      );
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const printWindow = window.open(url);
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-      } else {
-        toast.error('Popup blocked. Please allow popups.');
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error('Print failed');
+    const response = await axios.post(
+      '/invoices/generate-pdf',
+      { ...invoice, shouldSave: false },
+      { responseType: 'blob' }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Invoice_${invoice.invoiceNo}_${invoice.template}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    toast.success('Invoice downloaded!');
+  } catch (err) {
+    console.error(err);
+    toast.error('Download failed');
+  } finally {
+    setActionLoading(false);
+    setLoadingText('');
+  }
+};
+
+const handlePrint = async () => {
+  try {
+    setLoadingText('Preparing Invoice for Print...');
+    setActionLoading(true);
+
+    const response = await axios.post(
+      '/invoices/generate-pdf',
+      { ...invoice, shouldSave: false },
+      { responseType: 'blob' }
+    );
+
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const printWindow = window.open(url);
+
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+        setTimeout(() => {
+          setActionLoading(false);
+          setLoadingText('');
+        }, 500); // small delay to allow print dialog
+      };
+    } else {
+      throw new Error('Popup blocked. Please allow popups.');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error('Print failed');
+    setActionLoading(false);
+    setLoadingText('');
+  }
+};
 
   const handleShareInvoice = async () => {
   try {
@@ -120,7 +139,7 @@ const InvoicePreviewPage = () => {
     calcSubtotal() - calcDiscount() + calcTax() + calcVat() + parseFloat(shipping || 0);
 
   return (
-    <div className="mt-7">
+    <div className="mt-10">
       <InvoicePreview
         business={business}
         billTo={billTo}
@@ -147,11 +166,21 @@ const InvoicePreviewPage = () => {
         handleShareInvoice={handleShareInvoice}
       />
 
-      {actionLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="text-white text-lg">{loadingText || 'Processing...'}</div>
-        </div>
-      )}
+    {actionLoading && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="flex flex-col items-center gap-4 text-white animate-fadeIn">
+      <div className="relative w-14 h-14">
+        <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-ping"></div>
+        <div className="w-full h-full rounded-full border-t-4 border-b-4 border-white border-opacity-90 animate-spin"></div>
+        <div className="absolute top-1/2 left-1/2 w-3 h-3 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full shadow-md shadow-white/70"></div>
+      </div>
+      <p className="text-lg font-semibold tracking-wide animate-pulse">
+        {loadingText || "Processing your invoice..."}
+      </p>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

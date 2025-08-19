@@ -1,33 +1,37 @@
 // server/models/Invoice.js
 import mongoose from 'mongoose';
 
+// Item schema
 const itemSchema = new mongoose.Schema({
-  name: String,
+  name: { type: String, required: true },
   description: String,
-  quantity: Number,
-  rate: Number
+  quantity: { type: Number, required: true, default: 1 },
+  rate: { type: Number, required: true }
 }, { _id: false });
 
+// Bill-to schema
 const billToSchema = new mongoose.Schema({
-  name: String,
+  name: { type: String, required: true },
   email: String,
   contact: String,
   address: String
-
 }, { _id: false });
 
+// Main Invoice schema
 const invoiceSchema = new mongoose.Schema({
-  invoiceNo: String,
-  billDate: Date,
-  dueDate: Date,
-  status: String,
-  discount: Number,
-  tax: Number,
-  vat: Number,
-  shipping: Number,
-  currency: String,
-  notes: String,
-  template: String,
+  invoiceNo: { type: String, required: true },
+  billDate: { type: Date, required: true },
+  dueDate: { type: Date },
+  status: { type: String, default: "Unpaid" },
+
+  discount: { type: Number, default: 0 },
+  tax: { type: Number, default: 0 },
+  vat: { type: Number, default: 0 },
+  shipping: { type: Number, default: 0 },
+
+  currency: { type: String, default: "INR" },
+  notes: { type: String },
+  template: { type: String, default: "Classic" },
 
   business: {
     type: mongoose.Schema.Types.ObjectId,
@@ -35,14 +39,14 @@ const invoiceSchema = new mongoose.Schema({
     required: true
   },
 
-  billTo: billToSchema,
-  items: [itemSchema],
+  billTo: { type: billToSchema, required: true },
+  items: { type: [itemSchema], required: true },
 
-  subtotal: String,
-  discountAmount: String,
-  taxAmount: String,
-  vatAmount: String,
-  total: String,
+  subtotal: { type: Number, default: 0 },
+  discountAmount: { type: Number, default: 0 },
+  taxAmount: { type: Number, default: 0 },
+  vatAmount: { type: Number, default: 0 },
+  total: { type: Number, default: 0 },
 
   createdAt: {
     type: Date,
@@ -50,7 +54,7 @@ const invoiceSchema = new mongoose.Schema({
   }
 });
 
-// ✅ Protect against duplicate invoiceNo for the same business
+// Ensure unique invoice number for each business
 invoiceSchema.index({ business: 1, invoiceNo: 1 }, { unique: true });
 
 export default mongoose.model('Invoice', invoiceSchema);

@@ -111,7 +111,7 @@ export default function BusinessDashboard() {
 
     const total = chart.config.data.datasets[0].data.reduce((a, b) => a + b, 0);
     ctx.font = "bold 22px 'Lato', sans-serif";
-    ctx.fillStyle = "#334155"; // Tailwind slate-700
+    ctx.fillStyle = "#334155";
     ctx.textBaseline = "middle";
 
     const text = `${total} Total`;
@@ -232,29 +232,33 @@ export default function BusinessDashboard() {
       </div>
 
       <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Recent Invoices</h2>
-        <div className="space-y-4">
-          {filteredInvoices.slice(0, 5).map((inv) => (
-            <div key={inv._id} className="flex justify-between items-center border-b pb-3">
-              <div>
-                <p className="font-medium text-slate-800">INV-{inv.invoiceNo}</p>
-                <p className="text-sm text-slate-500">{inv.billTo?.name}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-slate-800 font-semibold">
-                  {parseFloat(inv.total).toLocaleString("en-IN", {
-                    style: "currency",
-                    currency: "INR",
-                  })}
-                </p>
-                <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(inv.status)}`}>
-                  {inv.status}
-                </span>
-              </div>
-            </div>
-          ))}
+  <h2 className="text-lg font-semibold text-slate-800 mb-4">Recent Invoices</h2>
+  <div className="space-y-4">
+    {[...filteredInvoices]
+      .sort((a, b) => new Date(b.billDate) - new Date(a.billDate)) // ✅ Sort by date DESC
+      .slice(0, 5)
+      .map((inv) => (
+        <div key={inv._id} className="flex justify-between items-center border-b pb-3">
+          <div>
+            <p className="font-medium text-slate-800">INV-{inv.invoiceNo}</p>
+            <p className="text-sm text-slate-500">{inv.billTo?.name}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-slate-800 font-semibold">
+              {parseFloat(inv.total).toLocaleString("en-IN", {
+                style: "currency",
+                currency: "INR",
+              })}
+            </p>
+            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(inv.status)}`}>
+              {inv.status}
+            </span>
+          </div>
         </div>
+      ))}
+  </div>
       </div>
+
     </div>
   );
 }
